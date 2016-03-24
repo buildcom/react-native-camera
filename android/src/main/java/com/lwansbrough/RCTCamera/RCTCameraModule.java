@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.media.MediaScannerConnection;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -188,7 +189,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule {
                         promise.resolve(url);
                         break;
                     case RCT_CAMERA_CAPTURE_TARGET_DISK:
-                        File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+                        File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE, options.getString("pictureFolder"));
                         if (pictureFile == null) {
                             promise.reject("Error creating media file.");
                             return;
@@ -203,7 +204,12 @@ public class RCTCameraModule extends ReactContextBaseJavaModule {
                         } catch (IOException e) {
                             promise.reject("Error accessing file: " + e.getMessage());
                         }
-                        promise.resolve(Uri.fromFile(pictureFile).toString());
+                        MediaScannerConnection.scanFile(_reactContext,new String[] { pictureFile.getAbsolutePath()}, null,new MediaScannerConnection.OnScanCompletedListener() {
+                            public void onScanCompleted(String path, Uri contentUri) {
+                                promise.resolve(contentUri.toString());
+                            }
+                        });
+
                         break;
                     case RCT_CAMERA_CAPTURE_TARGET_TEMP:
                         File tempFile = getTempMediaFile(MEDIA_TYPE_IMAGE);
@@ -234,9 +240,12 @@ public class RCTCameraModule extends ReactContextBaseJavaModule {
         // TODO: implement video capture
     }
 
-    private File getOutputMediaFile(int type) {
+    private File getOutputMediaFile(int type, String pictureFolder) {
+        if (pictureFolder == null) {
+            pictureFolder = "RCTCameraModule";
+        }
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "RCTCameraModule");
+                Environment.DIRECTORY_PICTURES), pictureFolder);
 
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {

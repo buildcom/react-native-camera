@@ -1,8 +1,7 @@
-import React, {
-  Component,
+import React , { Component, PropTypes } from 'react';
+import  {
   NativeAppEventEmitter,
   NativeModules,
-  PropTypes,
   StyleSheet,
   requireNativeComponent,
   View,
